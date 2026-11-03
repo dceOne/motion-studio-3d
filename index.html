@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Motion Studio 3D</title>
+  <style>
+    :root {
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #3b82f6;
+      --grad-accent: linear-gradient(90deg, #3b82f6, #8b5cf6, #14b8a6);
+      --grad-btn: linear-gradient(135deg, #3b82f6, #6366f1);
+      --danger: #ef4444;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    [data-theme="dark"] {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    
+    body { background: var(--bg-main); color: var(--text-main); padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); display: flex; flex-direction: column; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+    
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+    }
+
+    /* Header */
+    header { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.2rem; }
+    .logo-m { background: var(--grad-accent); -webkit-background-clip: text; color: transparent; font-size: 1.5rem; font-weight: 900; }
+    .nav-toggle { background: none; border: none; font-size: 1.5rem; color: var(--text-main); cursor: pointer; min-height: 44px; min-width: 44px; }
+    
+    /* Navigation Menu */
+    .nav-menu { display: none; position: absolute; top: 60px; right: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); shadow: var(--shadow); flex-direction: column; overflow: hidden; z-index: 100; }
+    .nav-menu.active { display: flex; }
+    .nav-btn { padding: 12px 20px; background: none; border: none; border-bottom: 1px solid var(--border); text-align: left; color: var(--text-main); font-size: 1rem; cursor: pointer; min-height: 44px; }
+    .nav-btn:last-child { border-bottom: none; }
+    .nav-btn:hover, .nav-btn.active { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
+
+    /* Main Layout */
+    main { flex: 1; display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
+    @media (min-width: 1024px) {
+      main { grid-template-columns: 400px 1fr; }
+    }
+
+    /* Cards */
+    .card { background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; position: relative; display: flex; flex-direction: column; margin-bottom: 20px; border: 1px solid var(--border); }
+    .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--grad-accent); }
+    .card-header { padding: 15px 20px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 1.1rem; }
+    .card-body { padding: 20px; flex: 1; overflow-y: auto; }
+
+    /* Preview Section */
+    .preview-container { aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+    canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .preview-controls { margin-top: 15px; display: flex; gap: 10px; align-items: center; }
+    .slider { flex: 1; accent-color: var(--primary); }
+    .badge { background: var(--border); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: var(--text-main); }
+    .badge.playing { background: var(--primary); color: white; }
+
+    /* Forms & Inputs */
+    input, textarea, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); color: var(--text-main); margin-bottom: 15px; font-size: 1rem; }
+    textarea { resize: vertical; min-height: 100px; font-family: monospace; }
+    label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; color: var(--text-muted); }
+    
+    /* Buttons */
+    .btn { background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 0 20px; border-radius: 8px; font-weight: 600; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+    .btn:active { opacity: 0.8; }
+    .btn-primary { background: var(--grad-btn); color: white; border: none; }
+    .btn-danger { background: var(--danger); color: white; border: none; }
+    .btn-block { width: 100%; }
+
+    /* Image Upload Preview */
+    .img-preview { width: 100%; height: 150px; border: 2px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; position: relative; overflow: hidden; background: var(--bg-main); }
+    .img-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .img-preview .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
+
+    /* Lists */
+    .item-list { list-style: none; }
+    .item-list li { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; background: var(--bg-main); cursor: pointer; }
+    .item-list li.active { border-color: var(--primary); background: rgba(59, 130, 246, 0.05); }
+
+    /* Progress */
+    .progress-bar { width: 100%; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; margin-top: 10px; }
+    .progress-fill { height: 100%; background: var(--grad-accent); width: 0%; transition: width 0.1s; }
+
+    /* Utilities */
+    .hidden { display: none !important; }
+    .flex-row { display: flex; gap: 10px; }
+    .mt-4 { margin-top: 15px; }
+    .text-center { text-align: center; }
+    .error-log { color: var(--danger); font-family: monospace; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; font-size: 0.85rem; white-space: pre-wrap; margin-bottom: 15px;}
+
+    /* Modals & Overlays */
+    #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 1000; }
+    .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px;}
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+  
+  <!-- Import Map untuk Three.js dan ES Modules -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+        "mp4-muxer": "https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.mjs",
+        "@ffmpeg/ffmpeg": "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm",
+        "@ffmpeg/util": "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <span class="logo-m">M</span> Motion Studio 3D
+    </div>
+    <button class="nav-toggle" id="btn-nav">⋮</button>
+    <div class="nav-menu" id="nav-menu">
+      <button class="nav-btn active" data-tab="tab-generate">Generate AI</button>
+      <button class="nav-btn" data-tab="tab-editor">Editor Kode</button>
+      <button class="nav-btn" data-tab="tab-render">Render & Export</button>
+      <button class="nav-btn" data-tab="tab-library">Library Animasi</button>
+      <button class="nav-btn" data-tab="tab-settings">Pengaturan</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left Column: Preview -->
+    <section>
+      <div class="card">
+        <div class="card-header">Render Preview</div>
+        <div class="card-body">
+          <div class="preview-container" id="preview-wrapper">
+            <canvas id="gl-canvas"></canvas>
+          </div>
+          <div class="preview-controls">
+            <button class="btn" id="btn-play-pause">▶ Putar</button>
+            <input type="range" id="timeline" class="slider" min="0" max="1" step="0.01" value="0">
+            <span class="badge" id="badge-playing">Paused</span>
+            <span class="badge" id="badge-fps">0 fps</span>
+          </div>
+          <div class="mt-4 flex-row">
+            <div style="flex: 1;">
+              <label>Durasi Pratinjau (dtk)</label>
+              <select id="preview-duration">
+                <option value="3">3 Detik</option>
+                <option value="5" selected>5 Detik</option>
+                <option value="10">10 Detik</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label>Background</label>
+              <select id="preview-bg">
+                <option value="transparent">Transparan</option>
+                <option value="solid">Warna Solid</option>
+              </select>
+              <input type="color" id="preview-color" value="#000000" class="hidden" style="margin-top:5px; height:44px; padding:2px;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Tabs -->
+    <section>
+      
+      <!-- GENERATE TAB -->
+      <div class="card" id="tab-generate">
+        <div class="card-header">Generate Animation via AI</div>
+        <div class="card-body">
+          <label>Gambar Referensi (Opsional)</label>
+          <div class="img-preview" id="upload-box">
+            <span style="color:var(--text-muted)">Ketuk untuk unggah gambar</span>
+            <input type="file" id="file-ref" accept="image/*" style="opacity:0; position:absolute; inset:0; cursor:pointer;">
+            <img id="img-ref-preview" class="hidden" src="" alt="Ref">
+            <button class="remove-img hidden" id="btn-remove-img">×</button>
+          </div>
+
+          <label>Deskripsi Animasi (Prompt)</label>
+          <textarea id="ai-prompt" placeholder="Contoh: Buat animasi rotasi kubus neon abstrak dengan pola grid..."></textarea>
+
+          <label>Instruksi Koreksi (Jika iterasi)</label>
+          <textarea id="ai-correction" placeholder="Contoh: Putaran terlalu cepat, ubah warna menjadi merah..." style="min-height: 60px;"></textarea>
+          
+          <div id="ai-error-log" class="error-log hidden"></div>
+
+          <button class="btn btn-primary btn-block" id="btn-generate">Generate Code</button>
+          
+          <div class="mt-4 flex-row hidden" id="generate-actions">
+            <button class="btn btn-block" id="btn-save-ai">Simpan ke Library</button>
+            <button class="btn btn-danger btn-block" id="btn-discard-ai">Buang</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDITOR TAB -->
+      <div class="card hidden" id="tab-editor">
+        <div class="card-header">Editor Kode (Three.js)</div>
+        <div class="card-body" style="display:flex; flex-direction:column;">
+          <label>Nama Animasi</label>
+          <input type="text" id="edit-name" placeholder="Nama Animasi">
+          <label>Kode (setup & update)</label>
+          <textarea id="edit-code" style="flex:1; min-height: 300px;" spellcheck="false" placeholder="function setup(api) { ... }&#10;function update(st, t, o) { ... }"></textarea>
+          <div id="editor-error" class="error-log hidden"></div>
+          <div class="flex-row mt-4">
+            <button class="btn btn-primary" id="btn-run-code" style="flex:1">Jalankan (Ctrl+Enter)</button>
+            <button class="btn" id="btn-save-code" style="flex:1">Simpan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RENDER TAB -->
+      <div class="card hidden" id="tab-render">
+        <div class="card-header">Render & Export</div>
+        <div class="card-body">
+          <p style="margin-bottom:15px; font-size:0.9rem; color:var(--text-muted);">Render menggunakan WebCodecs atau ffmpeg.wasm di lokal.</p>
+          
+          <label>Format Video</label>
+          <select id="export-format">
+            <option value="mp4">MP4 (H.264 Solid)</option>
+            <option value="webm">WebM (VP9 Alpha Transparan)</option>
+            <option value="mov">MOV (ProRes 4444 Transparan) - BERAT</option>
+          </select>
+
+          <div class="flex-row">
+            <div style="flex:1">
+              <label>Rasio</label>
+              <select id="export-ratio">
+                <option value="16/9" data-w="1920" data-h="1080">16:9 (Landscape)</option>
+                <option value="9/16" data-w="1080" data-h="1920">9:16 (Portrait)</option>
+                <option value="1/1" data-w="1080" data-h="1080">1:1 (Square)</option>
+              </select>
+            </div>
+            <div style="flex:1">
+              <label>Resolusi</label>
+              <select id="export-res">
+                <option value="720">HD (720p)</option>
+                <option value="1080" selected>Full HD (1080p)</option>
+                <option value="2160">4K (2160p)</option>
+              </select>
+            </div>
+          </div>
+          <div id="warning-4k" class="error-log hidden mt-4">Peringatan: 4K membutuhkan memori GPU besar dan proses MOV akan sangat lambat.</div>
+
+          <div class="flex-row mt-4">
+            <div style="flex:1">
+              <label>Durasi (dtk)</label>
+              <select id="export-dur">
+                <option value="3">3 dtk</option>
+                <option value="5" selected>5 dtk</option>
+                <option value="10">10 dtk</option>
+                <option value="15">15 dtk</option>
+              </select>
+            </div>
+            <div style="flex:1">
+              <label>FPS</label>
+              <select id="export-fps">
+                <option value="24">24 fps</option>
+                <option value="30" selected>30 fps</option>
+                <option value="60">60 fps</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="render-progress-ui" class="hidden mt-4">
+            <label id="lbl-progress">Merender: 0%</label>
+            <div class="progress-bar"><div class="progress-fill" id="bar-progress"></div></div>
+            <button class="btn btn-danger btn-block mt-4" id="btn-cancel-render">Batalkan Render</button>
+          </div>
+
+          <button class="btn btn-primary btn-block mt-4" id="btn-start-render">Mulai Render Animasi Aktif</button>
+          
+          <div id="render-results" class="mt-4">
+            <label>Hasil Render</label>
+            <ul class="item-list" id="list-results"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIBRARY TAB -->
+      <div class="card hidden" id="tab-library">
+        <div class="card-header">Library Animasi</div>
+        <div class="card-body">
+          <p id="lib-count" style="margin-bottom:15px; color:var(--text-muted);">0 item tersimpan</p>
+          <ul class="item-list" id="list-library"></ul>
+        </div>
+      </div>
+
+      <!-- SETTINGS TAB -->
+      <div class="card hidden" id="tab-settings">
+        <div class="card-header">Pengaturan</div>
+        <div class="card-body">
+          <label>Tema UI</label>
+          <select id="setting-theme">
+            <option value="light">Terang</option>
+            <option value="dark">Gelap</option>
+          </select>
+          <button class="btn btn-danger btn-block mt-4" id="btn-clear-data">Hapus Semua Data (Reset)</button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <div id="loading-overlay" class="hidden">
+    <div class="spinner"></div>
+    <h3 id="loading-text">Memproses...</h3>
+    <p id="loading-subtext" style="margin-top:10px; font-size:0.9rem; text-align:center; max-width:80%;"></p>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import * as Mp4Muxer from 'mp4-muxer';
+    import { FFmpeg } from '@ffmpeg/ffmpeg';
+    import { fetchFile } from '@ffmpeg/util';
+
+    // --- UTILS & DB ---
+    const DB_NAME = 'MotionStudioDB';
+    const STORE_NAME = 'animations';
+    let db = null;
+
+    async function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const idb = e.target.result;
+          if (!idb.objectStoreNames.contains(STORE_NAME)) {
+            idb.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          }
+        };
+        req.onsuccess = () => { db = req.result; resolve(); };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbPut(item) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const req = tx.objectStore(STORE_NAME).put(item);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGetAll() {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDelete(id) {
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).delete(id);
+        tx.oncomplete = () => resolve();
+      });
+    }
+
+    // Pseudo-Random Generator Deterministik
+    function createPRNG(seed) {
+      return function() {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      }
+    }
+
+    // --- THREE.JS ENGINE ---
+    class Engine3D {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.renderer = new THREE.WebGLRenderer({
+          canvas: this.canvas,
+          antialias: true,
+          alpha: true,
+          preserveDrawingBuffer: true
+        });
+        this.renderer.setPixelRatio(1);
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(75, 16/9, 0.1, 1000);
+        this.camera.position.z = 5;
+        
+        this.activeCode = null;
+        this.fns = { setup: null, update: null };
+        this.animState = null;
+        
+        this.isPlaying = false;
+        this.currentTime = 0;
+        this.lastFrameTime = 0;
+        this.config = { dur: 5, fps: 30, solid: false, aspect: 16/9, w: 1280, h: 720 };
+        this.customBgColor = '#000000';
+        
+        this.rafId = null;
+
+        // GPU Check
+        const gl = this.renderer.getContext();
+        this.maxTexSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+        this.maxRenderBuf = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE);
+
+        this.canvas.addEventListener('webglcontextlost', (e) => {
+          e.preventDefault();
+          alert('Konteks WebGL terputus. Muat ulang halaman.');
+        });
+      }
+
+      clearScene() {
+        while(this.scene.children.length > 0){ 
+          const object = this.scene.children[0];
+          if(object.isMesh) {
+            object.geometry.dispose();
+            if(object.material.isMaterial) {
+              this.cleanMaterial(object.material);
+            } else {
+              for(const material of object.material) this.cleanMaterial(material);
+            }
+          }
+          this.scene.remove(object); 
+        }
+      }
+
+      cleanMaterial(material) {
+        material.dispose();
+        for (const key of Object.keys(material)) {
+          const value = material[key];
+          if (value && typeof value === 'object' && 'minFilter' in value) {
+            value.dispose();
+          }
+        }
+      }
+
+      compileAndLoad(codeText, cfg) {
+        this.stop();
+        this.clearScene();
+        this.config = { ...this.config, ...cfg };
+        
+        // Atur background
+        if (this.config.solid) {
+          this.renderer.setClearColor(new THREE.Color(this.customBgColor), 1);
+          this.scene.background = new THREE.Color(this.customBgColor);
+        } else {
+          this.renderer.setClearColor(0x000000, 0);
+          this.scene.background = null;
+        }
+
+        try {
+          const fnBody = `${codeText}\nreturn {setup: typeof setup === 'function' ? setup : null, update: typeof update === 'function' ? update : null};`;
+          const compile = new Function('THREE', 'R', 'TAU', fnBody);
+          // Gunakan seed tetap
+          const PRNG = createPRNG(12345);
+          const TAU = Math.PI * 2;
+          const exports = compile(THREE, PRNG, TAU);
+          
+          if (!exports.setup || !exports.update) throw new Error("Kode harus memiliki function setup(api) dan update(st, t, o)");
+          
+          this.fns = exports;
+          this.resizeCanvas(); // set w h before setup
+          this.animState = this.fns.setup({ scene: this.scene, camera: this.camera, renderer: this.renderer, o: this.config });
+          this.activeCode = codeText;
+          this.currentTime = 0;
+          this.renderFrame(0);
+          return true;
+        } catch (e) {
+          console.error("Compile Error:", e);
+          throw e;
+        }
+      }
+
+      resizeCanvas(w, h, aspectRatio) {
+        const targetAspect = aspectRatio || this.config.aspect;
+        const width = w || this.canvas.parentElement.clientWidth;
+        const height = h || (width / targetAspect);
+        
+        this.renderer.setSize(width, height, false);
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.config.w = width;
+        this.config.h = height;
+      }
+
+      renderFrame(t) {
+        if (!this.fns.update) return;
+        try {
+          this.fns.update(this.animState, t, this.config);
+          this.renderer.render(this.scene, this.camera);
+        } catch (e) {
+          this.stop();
+          throw e;
+        }
+      }
+
+      play() {
+        if(this.isPlaying || !this.fns.update) return;
+        this.isPlaying = true;
+        this.lastFrameTime = performance.now();
+        this.loop();
+      }
+
+      stop() {
+        this.isPlaying = false;
+        if(this.rafId) cancelAnimationFrame(this.rafId);
+      }
+
+      loop() {
+        if(!this.isPlaying) return;
+        this.rafId = requestAnimationFrame(() => this.loop());
+        
+        const now = performance.now();
+        const dt = (now - this.lastFrameTime) / 1000;
+        this.lastFrameTime = now;
+        
+        this.currentTime += dt;
+        if(this.currentTime > this.config.dur) this.currentTime %= this.config.dur; // Loop
+        
+        // Update UI timeline (if hooked)
+        if(window.updateTimelineUI) window.updateTimelineUI(this.currentTime / this.config.dur, 1/dt);
+        
+        this.renderFrame(this.currentTime);
+      }
+
+      // Validasi cepat: render 64x64 di waktu t=0, 25%, 50%, 75% 
+      async validateOutput(codeText) {
+        const bakW = this.canvas.width;
+        const bakH = this.canvas.height;
+        try {
+          this.compileAndLoad(codeText, { w: 64, h: 64 });
+          this.renderer.setSize(64, 64, false);
+          this.camera.aspect = 1;
+          this.camera.updateProjectionMatrix();
+          
+          let emptyCount = 0;
+          const gl = this.renderer.getContext();
+          const pixels = new Uint8Array(64 * 64 * 4);
+          
+          const checks = [0, 0.25, 0.5, 0.75];
+          for (let p of checks) {
+            this.renderFrame(p * this.config.dur);
+            gl.readPixels(0, 0, 64, 64, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+            let hasPixel = false;
+            for(let i=0; i<pixels.length; i+=4) {
+              // Jika alpha ada atau RGB tidak hitam pekat (tergantung solid)
+              if(pixels[i+3] > 10 || pixels[i] > 10 || pixels[i+1] > 10) { hasPixel = true; break; }
+            }
+            if(!hasPixel) emptyCount++;
+          }
+
+          // Kembalikan ukuran asli
+          this.resizeCanvas(bakW, bakH);
+          this.compileAndLoad(codeText, this.config);
+
+          if (emptyCount === 4) return "Animasi merender frame kosong (transparan/hitam pekat di semua titik waktu). Coba perbesar objek, perbaiki posisi kamera (misal camera.position.z = 5), atau tambahkan pencahayaan (DirectionalLight/AmbientLight).";
+          return null; // Valid
+        } catch (e) {
+          return e.message;
+        }
+      }
+    }
+
+    // --- GLOBALS & UI ---
+    const engine = new Engine3D('gl-canvas');
+    let currentAnimationId = null;
+    let base64Image = null;
+    let isRendering = false;
+    let abortRender = false;
+
+    // UI Elements
+    const els = {
+      navToggle: document.getElementById('btn-nav'),
+      navMenu: document.getElementById('nav-menu'),
+      navBtns: document.querySelectorAll('.nav-btn'),
+      tabs: document.querySelectorAll('main > section:nth-child(2) > .card'),
+      
+      // Preview
+      btnPlay: document.getElementById('btn-play-pause'),
+      timeline: document.getElementById('timeline'),
+      badgePlaying: document.getElementById('badge-playing'),
+      badgeFps: document.getElementById('badge-fps'),
+      selPrevDur: document.getElementById('preview-duration'),
+      selPrevBg: document.getElementById('preview-bg'),
+      inPrevColor: document.getElementById('preview-color'),
+      
+      // Generate
+      fileRef: document.getElementById('file-ref'),
+      imgPreview: document.getElementById('img-ref-preview'),
+      btnRemoveImg: document.getElementById('btn-remove-img'),
+      uploadBoxMsg: document.querySelector('#upload-box span'),
+      aiPrompt: document.getElementById('ai-prompt'),
+      aiCorrection: document.getElementById('ai-correction'),
+      btnGenerate: document.getElementById('btn-generate'),
+      aiErrorLog: document.getElementById('ai-error-log'),
+      genActions: document.getElementById('generate-actions'),
+      btnSaveAi: document.getElementById('btn-save-ai'),
+      btnDiscardAi: document.getElementById('btn-discard-ai'),
+      
+      // Editor
+      editName: document.getElementById('edit-name'),
+      editCode: document.getElementById('edit-code'),
+      editorError: document.getElementById('editor-error'),
+      btnRunCode: document.getElementById('btn-run-code'),
+      btnSaveCode: document.getElementById('btn-save-code'),
+      
+      // Render
+      selFormat: document.getElementById('export-format'),
+      selRatio: document.getElementById('export-ratio'),
+      selRes: document.getElementById('export-res'),
+      selDur: document.getElementById('export-dur'),
+      selFps: document.getElementById('export-fps'),
+      warn4k: document.getElementById('warning-4k'),
+      btnStartRender: document.getElementById('btn-start-render'),
+      btnCancelRender: document.getElementById('btn-cancel-render'),
+      progressUI: document.getElementById('render-progress-ui'),
+      lblProgress: document.getElementById('lbl-progress'),
+      barProgress: document.getElementById('bar-progress'),
+      listResults: document.getElementById('list-results'),
+      
+      // Library
+      listLibrary: document.getElementById('list-library'),
+      libCount: document.getElementById('lib-count'),
+      
+      // Settings
+      selTheme: document.getElementById('setting-theme'),
+      btnClearData: document.getElementById('btn-clear-data'),
+      
+      // Overlay
+      overlay: document.getElementById('loading-overlay'),
+      overText: document.getElementById('loading-text'),
+      overSub: document.getElementById('loading-subtext')
+    };
+
+    // UI Tab Navigation
+    els.navToggle.addEventListener('click', () => els.navMenu.classList.toggle('active'));
+    els.navBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        els.navBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        els.tabs.forEach(t => t.classList.add('hidden'));
+        document.getElementById(e.target.dataset.tab).classList.remove('hidden');
+        els.navMenu.classList.remove('active');
+        if(e.target.dataset.tab === 'tab-library') refreshLibrary();
+      });
+    });
+
+    // Tema
+    els.selTheme.addEventListener('change', (e) => {
+      document.documentElement.setAttribute('data-theme', e.target.value);
+      localStorage.setItem('theme', e.target.value);
+    });
+    if(localStorage.getItem('theme') === 'dark') {
+      els.selTheme.value = 'dark';
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+
+    // Global UI Hook untuk Engine
+    window.updateTimelineUI = (progress, fps) => {
+      els.timeline.value = progress;
+      els.badgeFps.innerText = `${Math.round(fps)} fps`;
+    };
+
+    // Preview Controls
+    els.btnPlay.addEventListener('click', () => {
+      if(engine.isPlaying) {
+        engine.stop();
+        els.badgePlaying.innerText = 'Paused';
+        els.badgePlaying.style.background = 'var(--border)';
+        els.badgePlaying.style.color = 'var(--text-main)';
+        els.btnPlay.innerText = '▶ Putar';
+      } else {
+        engine.play();
+        els.badgePlaying.innerText = 'Playing';
+        els.badgePlaying.style.background = 'var(--primary)';
+        els.badgePlaying.style.color = 'white';
+        els.btnPlay.innerText = '⏸ Jeda';
+      }
+    });
+
+    els.timeline.addEventListener('input', (e) => {
+      engine.stop();
+      els.btnPlay.innerText = '▶ Putar';
+      els.badgePlaying.innerText = 'Paused';
+      els.badgePlaying.style.background = 'var(--border)';
+      els.badgePlaying.style.color = 'var(--text-main)';
+      engine.currentTime = parseFloat(e.target.value) * engine.config.dur;
+      engine.renderFrame(engine.currentTime);
+    });
+
+    els.selPrevDur.addEventListener('change', (e) => {
+      engine.config.dur = parseInt(e.target.value);
+      if(engine.activeCode) engine.compileAndLoad(engine.activeCode, engine.config);
+    });
+
+    els.selPrevBg.addEventListener('change', (e) => {
+      const isSolid = e.target.value === 'solid';
+      engine.config.solid = isSolid;
+      if(isSolid) {
+        els.inPrevColor.classList.remove('hidden');
+        engine.customBgColor = els.inPrevColor.value;
+      } else {
+        els.inPrevColor.classList.add('hidden');
+      }
+      if(engine.activeCode) engine.compileAndLoad(engine.activeCode, engine.config);
+    });
+
+    els.inPrevColor.addEventListener('input', (e) => {
+      engine.customBgColor = e.target.value;
+      if(engine.activeCode) engine.compileAndLoad(engine.activeCode, engine.config);
+    });
+
+    // Resize Observer untuk Canvas
+    const ro = new ResizeObserver(() => {
+      if(engine.activeCode && !isRendering) engine.resizeCanvas();
+    });
+    ro.observe(els.timeline.parentElement.parentElement);
+
+    // --- FILE UPLOAD ---
+    els.fileRef.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      if(file.size > 4 * 1024 * 1024) return alert("Gambar maksimal 4MB!");
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        base64Image = ev.target.result;
+        els.imgPreview.src = base64Image;
+        els.imgPreview.classList.remove('hidden');
+        els.btnRemoveImg.classList.remove('hidden');
+        els.uploadBoxMsg.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+    els.btnRemoveImg.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      base64Image = null;
+      els.fileRef.value = '';
+      els.imgPreview.classList.add('hidden');
+      els.btnRemoveImg.classList.add('hidden');
+      els.uploadBoxMsg.classList.remove('hidden');
+    });
+
+    // --- SHOW OVERLAY ---
+    function showLoading(text, sub = '') {
+      els.overText.innerText = text;
+      els.overSub.innerText = sub;
+      els.overlay.classList.remove('hidden');
+    }
+    function hideLoading() { els.overlay.classList.add('hidden'); }
+
+    // --- AI GENERATION ---
+    async function requestAIGeneration(payload, attempt = 1, maxAttempts = 3) {
+      showLoading(`Generating AI... (Iterasi ${attempt}/${maxAttempts})`, payload.error ? 'Memperbaiki error otomatis...' : 'Menulis kode Three.js');
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || 'Server error');
+        
+        const code = data.code;
+        els.aiErrorLog.classList.add('hidden');
+        
+        // Auto-validate
+        showLoading('Memvalidasi Output 3D...');
+        const valError = await engine.validateOutput(code);
+        
+        if (valError) {
+          if (attempt < maxAttempts) {
+            payload.previousCode = code;
+            payload.error = valError;
+            payload.instruction = '';
+            return requestAIGeneration(payload, attempt + 1, maxAttempts);
+          } else {
+            throw new Error("Gagal memvalidasi animasi setelah max retry:\n" + valError);
+          }
+        }
+        
+        // Sukses
+        els.editCode.value = code;
+        engine.compileAndLoad(code, engine.config);
+        els.genActions.classList.remove('hidden');
+        currentAnimationId = null; 
+        els.editName.value = `Animasi AI - ${new Date().toLocaleTimeString()}`;
+        hideLoading();
+        
+      } catch (e) {
+        hideLoading();
+        els.aiErrorLog.innerText = `Error: ${e.message}`;
+        els.aiErrorLog.classList.remove('hidden');
+      }
+    }
+
+    els.btnGenerate.addEventListener('click', () => {
+      const brief = els.aiPrompt.value.trim();
+      const instruction = els.aiCorrection.value.trim();
+      
+      const payload = { brief, image: base64Image };
+      if (instruction && els.editCode.value) {
+        payload.previousCode = els.editCode.value;
+        payload.instruction = instruction;
+      }
+      
+      requestAIGeneration(payload);
+    });
+
+    els.btnDiscardAi.addEventListener('click', () => {
+      engine.clearScene();
+      engine.activeCode = null;
+      els.editCode.value = '';
+      els.genActions.classList.add('hidden');
+    });
+
+    els.btnSaveAi.addEventListener('click', () => {
+      els.navBtns[1].click(); // Pindah ke Editor
+    });
+
+    // --- EDITOR ---
+    els.btnRunCode.addEventListener('click', () => {
+      try {
+        const code = els.editCode.value;
+        engine.compileAndLoad(code, engine.config);
+        els.editorError.classList.add('hidden');
+      } catch (e) {
+        els.editorError.innerText = e.message;
+        els.editorError.classList.remove('hidden');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter' && !document.getElementById('tab-editor').classList.contains('hidden')) {
+        els.btnRunCode.click();
+      }
+    });
+
+    els.btnSaveCode.addEventListener('click', async () => {
+      const code = els.editCode.value.trim();
+      const name = els.editName.value.trim() || 'Untitled Animation';
+      if(!code) return alert("Kode kosong!");
+      
+      const item = { name, code, date: new Date().toISOString() };
+      if (currentAnimationId) item.id = currentAnimationId;
+      
+      try {
+        currentAnimationId = await dbPut(item);
+        alert('Tersimpan!');
+        refreshLibrary();
+      } catch (e) { alert("Gagal menyimpan: " + e.message); }
+    });
+
+    // --- LIBRARY ---
+    async function refreshLibrary() {
+      const items = await dbGetAll();
+      els.libCount.innerText = `${items.length} file tersimpan`;
+      els.listLibrary.innerHTML = '';
+      
+      items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(item => {
+        const li = document.createElement('li');
+        if(item.id === currentAnimationId) li.classList.add('active');
+        
+        const title = document.createElement('span');
+        title.innerText = item.name;
+        title.style.flex = 1;
+        title.addEventListener('click', () => loadAnimation(item));
+        
+        const btnDel = document.createElement('button');
+        btnDel.innerText = 'Hapus';
+        btnDel.className = 'btn btn-danger';
+        btnDel.style.minHeight = '30px';
+        btnDel.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if(confirm('Hapus animasi ini?')) {
+            await dbDelete(item.id);
+            if(currentAnimationId === item.id) currentAnimationId = null;
+            refreshLibrary();
+          }
+        });
+        
+        li.appendChild(title);
+        li.appendChild(btnDel);
+        els.listLibrary.appendChild(li);
+      });
+    }
+
+    function loadAnimation(item) {
+      els.editName.value = item.name;
+      els.editCode.value = item.code;
+      currentAnimationId = item.id;
+      engine.compileAndLoad(item.code, engine.config);
+      els.navBtns[1].click(); // Go to Editor
+    }
+
+    // --- RENDER & EXPORT ---
+    els.selRes.addEventListener('change', (e) => {
+      if(e.target.value === "2160") els.warn4k.classList.remove('hidden');
+      else els.warn4k.classList.add('hidden');
+    });
+
+    els.btnCancelRender.addEventListener('click', () => { abortRender = true; });
+
+    async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    els.btnStartRender.addEventListener('click', async () => {
+      if(!engine.activeCode) return alert("Tidak ada animasi yang aktif!");
+      
+      const format = els.selFormat.value;
+      const ratioOpt = els.selRatio.options[els.selRatio.selectedIndex];
+      const wRatio = parseInt(ratioOpt.dataset.w);
+      const hRatio = parseInt(ratioOpt.dataset.h);
+      const resMult = parseInt(els.selRes.value) / 1080; // base is 1080p
+      
+      const targetW = Math.round(wRatio * resMult);
+      const targetH = Math.round(hRatio * resMult);
+      const dur = parseInt(els.selDur.value);
+      const fps = parseInt(els.selFps.value);
+      const totalFrames = dur * fps;
+      
+      // Cek limit GPU (Estimasi renderbuffer size)
+      if (Math.max(targetW, targetH) > engine.maxRenderBuf) {
+        return alert(`Resolusi terlalu besar untuk GPU perangkat ini. Max: ${engine.maxRenderBuf}px`);
+      }
+
+      // Pastikan solid untuk MP4 H264
+      if (format === 'mp4' && !engine.config.solid) {
+        if(!confirm("MP4 tidak mendukung latar transparan. Latar akan menjadi hitam. Lanjutkan?")) return;
+        engine.config.solid = true;
+        engine.customBgColor = '#000000';
+      } else if (format !== 'mp4' && engine.config.solid) {
+        if(!confirm(`Anda sedang menggunakan latar Solid. Format ${format.toUpperCase()} mendukung Transparan. Tetap render solid?`)) return;
+      }
+
+      isRendering = true;
+      abortRender = false;
+      engine.stop();
+      
+      els.btnStartRender.classList.add('hidden');
+      els.progressUI.classList.remove('hidden');
+      
+      const bakCfg = { ...engine.config };
+      engine.resizeCanvas(targetW, targetH, targetW/targetH);
+      engine.compileAndLoad(engine.activeCode, { ...engine.config, dur, fps, aspect: targetW/targetH, w: targetW, h: targetH });
+
+      try {
+        let blobUrl = null;
+        const filename = `${els.editName.value || 'Render'}-${targetW}x${targetH}.${format}`.replace(/\s+/g, '-');
+
+        if (format === 'mp4') {
+          if (typeof VideoEncoder === 'undefined') throw new Error("WebCodecs tidak didukung di browser ini.");
+          
+          let muxer = new Mp4Muxer.Muxer({
+            target: new Mp4Muxer.ArrayBufferTarget(),
+            video: { codec: 'avc', width: targetW, height: targetH }
+          });
+
+          let errorMsg = null;
+          let encoder = new VideoEncoder({
+            output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+            error: (e) => { errorMsg = e.message; }
+          });
+
+          encoder.configure({ codec: 'avc1.640028', width: targetW, height: targetH, bitrate: 5_000_000 * resMult * resMult, framerate: fps });
+
+          for (let i = 0; i < totalFrames; i++) {
+            if(abortRender) break;
+            if(errorMsg) throw new Error(errorMsg);
+            
+            engine.renderFrame(i / fps);
+            const bitmap = await createImageBitmap(engine.canvas);
+            const frame = new VideoFrame(bitmap, { timestamp: (i * 1000000) / fps });
+            encoder.encode(frame, { keyFrame: i % fps === 0 });
+            frame.close();
+            
+            // Tunggu jika queue penuh
+            while (encoder.encodeQueueSize > 5) await sleep(10);
+            
+            const pct = Math.round((i / totalFrames) * 100);
+            els.lblProgress.innerText = `Merender MP4: ${pct}%`;
+            els.barProgress.style.width = `${pct}%`;
+          }
+          
+          await encoder.flush();
+          muxer.finalize();
+          const buf = muxer.target.buffer;
+          blobUrl = URL.createObjectURL(new Blob([buf], { type: 'video/mp4' }));
+
+        } else if (format === 'webm') {
+          // Frame by frame WebM (via CanvasCapture + MediaRecorder fallback)
+          // Catatan: MediaRecorder tidak murni frame-by-frame offline, kita menggunakan stream real-time untuk fallback WebM Alpha.
+          const stream = engine.canvas.captureStream(fps);
+          const recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+          const chunks = [];
+          recorder.ondataavailable = e => chunks.push(e.data);
+          
+          const p = new Promise(resolve => recorder.onstop = resolve);
+          recorder.start();
+          
+          for (let i = 0; i <= totalFrames; i++) { // <= untuk memastikan frame terakhir masuk
+            if(abortRender) break;
+            engine.renderFrame(i / fps);
+            
+            const pct = Math.round((i / totalFrames) * 100);
+            els.lblProgress.innerText = `Merender WebM (Realtime): ${pct}%`;
+            els.barProgress.style.width = `${pct}%`;
+            await sleep(1000/fps); // Paksa real-time
+          }
+          recorder.stop();
+          await p;
+          
+          blobUrl = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
+
+        } else if (format === 'mov') {
+          const ffmpeg = new FFmpeg();
+          ffmpeg.on('log', ({ message }) => console.log(message));
+          
+          els.lblProgress.innerText = "Memuat FFmpeg...";
+          await ffmpeg.load({
+            coreURL: await fetchFile('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js'),
+            wasmURL: await fetchFile('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm')
+          });
+
+          // Tulis frame berurutan ke memori
+          for (let i = 1; i <= totalFrames; i++) {
+            if(abortRender) break;
+            engine.renderFrame((i-1) / fps);
+            
+            const blob = await new Promise(r => engine.canvas.toBlob(r, 'image/png'));
+            const buf = await blob.arrayBuffer();
+            await ffmpeg.writeFile(`f_${i}.png`, new Uint8Array(buf));
+            
+            const pct = Math.round((i / totalFrames) * 50); // 50% untuk nulis PNG
+            els.lblProgress.innerText = `Menyiapkan Frame: ${pct}%`;
+            els.barProgress.style.width = `${pct}%`;
+          }
+
+          if(!abortRender) {
+            els.lblProgress.innerText = "Encoding ProRes 4444 (Ini memakan waktu lama)...";
+            ffmpeg.on('progress', ({ progress }) => {
+              const pct = 50 + Math.round(progress * 50);
+              els.lblProgress.innerText = `Encoding MOV: ${pct}%`;
+              els.barProgress.style.width = `${pct}%`;
+            });
+
+            await ffmpeg.exec(['-framerate', `${fps}`, '-i', 'f_%d.png', '-c:v', 'prores_ks', '-profile:v', '4', '-pix_fmt', 'yuva444p10le', 'output.mov']);
+            const data = await ffmpeg.readFile('output.mov');
+            blobUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'video/quicktime' }));
+            
+            // Cleanup FS
+            for(let i=1; i<=totalFrames; i++) await ffmpeg.deleteFile(`f_${i}.png`);
+            await ffmpeg.deleteFile('output.mov');
+          }
+        }
+
+        if(!abortRender && blobUrl) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = filename;
+          a.innerText = `Unduh ${filename}`;
+          a.className = 'btn btn-primary';
+          a.style.width = '100%';
+          li.appendChild(a);
+          els.listResults.prepend(li);
+        }
+
+      } catch (e) {
+        alert("Gagal merender: " + e.message);
+      } finally {
+        isRendering = false;
+        engine.resizeCanvas(bakCfg.w, bakCfg.h, bakCfg.aspect); // kembalikan rasio preview
+        engine.compileAndLoad(engine.activeCode, bakCfg);
+        
+        els.btnStartRender.classList.remove('hidden');
+        els.progressUI.classList.add('hidden');
+        if(abortRender) alert("Render dibatalkan.");
+      }
+    });
+
+    // Pengaturan
+    els.btnClearData.addEventListener('click', async () => {
+      if(!confirm("HAPUS SEMUA DATA animasi di browser ini?")) return;
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).clear();
+      tx.oncomplete = () => {
+        alert("Data dihapus.");
+        currentAnimationId = null;
+        els.editName.value = '';
+        els.editCode.value = '';
+        engine.clearScene();
+        refreshLibrary();
+      };
+    });
+
+    // Init App
+    initDB().then(() => {
+      refreshLibrary();
+    }).catch(e => alert("Gagal inisialisasi database (IndexedDB)."));
+    
+  </script>
+</body>
+</html>
